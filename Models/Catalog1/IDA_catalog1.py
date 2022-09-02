@@ -74,35 +74,30 @@ def run_catalog1(idb_path, fva_list, sig_size, output_csv):
 
     # For each function in the list
     for fva in fva_list:
-        try:
-            func_binary_data = ""
-            for bb in sorted(get_basic_blocks(fva)):
-                bb_data = ida_bytes.get_bytes(bb.va, bb.size)
-                if bb_data:
-                    func_binary_data += bb_data
+        func_binary_data = ""
+        for bb in sorted(get_basic_blocks(fva)):
+            bb_data = ida_bytes.get_bytes(bb.va, bb.size)
+            if bb_data:
+                func_binary_data += bb_data
 
-            # Log the time to compute Catalog1 signatures only
-            start_time = time.time()
+        # Log the time to compute Catalog1 signatures only
+        start_time = time.time()
 
-            if len(func_binary_data) < 4:
-                catalog1_signature = ["min_function_size_error"]
-            else:
-                catalog1_list = sign(func_binary_data, sig_size)
-                catalog1_signature = ';'.join([str(x) for x in catalog1_list])
+        if len(func_binary_data) < 4:
+            catalog1_signature = ["min_function_size_error"]
+        else:
+            catalog1_list = sign(func_binary_data, sig_size)
+            catalog1_signature = ';'.join([str(x) for x in catalog1_list])
 
-            elapsed_time = time.time() - start_time
-            data = [idb_path,
-                    hex(fva).strip("L"),
-                    len(func_binary_data),
-                    catalog1_signature,
-                    elapsed_time]
+        elapsed_time = time.time() - start_time
+        data = [idb_path,
+                hex(fva).strip("L"),
+                len(func_binary_data),
+                catalog1_signature,
+                elapsed_time]
 
-            # Write the result to the CSV
-            csv_out.write(",".join([str(x) for x in data]) + "\n")
-
-        except Exception as e:
-            print("[!] Exception: skipping function fva: %d" % fva)
-            print(e)
+        # Write the result to the CSV
+        csv_out.write(",".join([str(x) for x in data]) + "\n")
 
     csv_out.close()
     return
