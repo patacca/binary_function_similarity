@@ -74,7 +74,7 @@ def run_catalog1(idb_path, fva_list, sig_size, output_csv):
 
     # For each function in the list
     for fva in fva_list:
-        func_binary_data = ""
+        func_binary_data = b""
         for bb in sorted(get_basic_blocks(fva)):
             bb_data = ida_bytes.get_bytes(bb.va, bb.size)
             if bb_data:
