@@ -62,18 +62,9 @@ def get_basic_blocks(fva):
 
 def run_catalog1(idb_path, fva_list, sig_size, output_csv):
     """Compute the Catalog1 hash for each selected function."""
-    csv_out = None
-    if os.path.isfile(output_csv):
-        # Found. Open the file in append mode
-        csv_out = open(output_csv, "a")
-        fcntl.flock(csv_out, fcntl.LOCK_EX)
-    else:
-        csv_out = open(output_csv, "w")
-        fcntl.flock(csv_out, fcntl.LOCK_EX)
-        # Not found. Write the column names to CSV
-        csv_out.write(",".join(COLUMNS) + "\n")
 
     print("[D] Output CSV: %s" % output_csv)
+    output_str = ''
 
     # For each function in the list
     for fva in fva_list:
@@ -99,9 +90,21 @@ def run_catalog1(idb_path, fva_list, sig_size, output_csv):
                 catalog1_signature,
                 elapsed_time]
 
-        # Write the result to the CSV
-        csv_out.write(",".join([str(x) for x in data]) + "\n")
+        # Custom buffering to avoid locking when calculating the catalog1 hash
+        output_str += ",".join([str(x) for x in data]) + "\n"
 
+    if os.path.isfile(output_csv):
+        # Found. Open the file in append mode
+        csv_out = open(output_csv, "a")
+        fcntl.flock(csv_out, fcntl.LOCK_EX)
+    else:
+        csv_out = open(output_csv, "w")
+        fcntl.flock(csv_out, fcntl.LOCK_EX)
+        # Not found. Write the column names to CSV
+        csv_out.write(",".join(COLUMNS) + "\n")
+
+    # Write the result to the CSV
+    csv_out.write(output_str)
     csv_out.close()
     return
 
