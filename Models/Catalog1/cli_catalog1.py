@@ -124,9 +124,9 @@ def main(json_path, output_csv):
         res = Parallel(n_jobs=N_JOBS)(run_process(idb_rel_path, json_path, sig_size, output_csv_s) for idb_rel_path in jj.keys())
         for r in res:
             if r > 0:
-                success_cnt += r[0]
+                success_cnt += r
             else:
-                error_cnt -= r[1]
+                error_cnt -= r
 
         end_time = time.time()
         print("[D] Elapsed time: {}".format(end_time - start_time))
