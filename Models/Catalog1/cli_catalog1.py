@@ -60,14 +60,14 @@ def main(json_path, output_csv):
     if not isfile(IDA_PATH):
         print("[!] Error: IDA_PATH:{} not valid".format(IDA_PATH))
         print("Use 'export IDA_PATH=/full/path/to/idat64'")
-        return
+        exit(1)
 
     print("[D] JSON path: {}".format(json_path))
     print("[D] Output CSV: {}".format(output_csv))
 
     if not isfile(json_path):
         print("[!] Error: {} does not exist".format(json_path))
-        return
+        exit(1)
 
     with open(json_path) as f_in:
         jj = json.load(f_in)
@@ -103,8 +103,7 @@ def main(json_path, output_csv):
 
             print("[D] cmd: {}".format(cmd))
 
-            proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = proc.communicate()
 
             if proc.returncode == 0:
@@ -118,8 +117,7 @@ def main(json_path, output_csv):
         end_time = time.time()
         print("[D] Elapsed time: {}".format(end_time - start_time))
         with open(LOG_PATH, "a+") as f_out:
-            f_out.write("elapsed_time: {}\n".format(
-                end_time - start_time))
+            f_out.write("elapsed_time: {}\n".format(end_time - start_time))
 
         print("\n# IDBs correctly processed: {}".format(success_cnt))
         print("# IDBs error: {}".format(error_cnt))
