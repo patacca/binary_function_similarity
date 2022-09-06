@@ -43,12 +43,53 @@ from os.path import abspath
 from os.path import dirname
 from os.path import isfile
 from os.path import join
+from joblib import Parallel, delayed
 
 IDA_PATH = getenv("IDA_PATH", "/home/user/idapro-7.3/idat64")
 IDA_PLUGIN = join(dirname(abspath(__file__)), 'IDA_catalog1.py')
 REPO_PATH = dirname(dirname(dirname(abspath(__file__))))
 LOG_PATH = "catalog1_log.txt"
+N_JOBS = -1  # Use all the resources available
 
+
+@delayed
+def run_process(idb_rel_path, json_path, sig_size, output_csv_s):
+    """
+    Run the IDA script and returns -1 if there was an error and 1 if it was a success
+    """
+
+    print("\n[D] Processing: {}".format(idb_rel_path))
+
+    # Convert the relative path into a full path
+    idb_path = join(REPO_PATH, idb_rel_path)
+    print("[D] IDB full path: {}".format(idb_path))
+
+    if not isfile(idb_path):
+        print("[!] Error: {} does not exist".format(idb_path))
+        return -1
+
+    cmd = [IDA_PATH,
+           '-A',
+           '-L{}'.format(LOG_PATH),
+           '-S{}'.format(IDA_PLUGIN),
+           '-Ocatalog1:{}:{}:{}:{}'.format(
+               json_path,
+               idb_rel_path,
+               sig_size,
+               output_csv_s),
+           idb_path]
+
+    print("[D] cmd: {}".format(cmd))
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+
+    if proc.returncode == 0:
+        print("[D] {}: success".format(idb_path))
+        return 1
+    else:
+        print("[!] Error in {} (returncode={})".format(idb_path, proc.returncode))
+        return -1
 
 @click.command()
 @click.option('-j', '--json-path', required=True,
@@ -79,40 +120,13 @@ def main(json_path, output_csv):
 
         success_cnt, error_cnt = 0, 0
         start_time = time.time()
-        for idb_rel_path in jj.keys():
-            print("\n[D] Processing: {}".format(idb_rel_path))
 
-            # Convert the relative path into a full path
-            idb_path = join(REPO_PATH, idb_rel_path)
-            print("[D] IDB full path: {}".format(idb_path))
-
-            if not isfile(idb_path):
-                print("[!] Error: {} does not exist".format(idb_path))
-                continue
-
-            cmd = [IDA_PATH,
-                   '-A',
-                   '-L{}'.format(LOG_PATH),
-                   '-S{}'.format(IDA_PLUGIN),
-                   '-Ocatalog1:{}:{}:{}:{}'.format(
-                       json_path,
-                       idb_rel_path,
-                       sig_size,
-                       output_csv_s),
-                   idb_path]
-
-            print("[D] cmd: {}".format(cmd))
-
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-
-            if proc.returncode == 0:
-                print("[D] {}: success".format(idb_path))
-                success_cnt += 1
+        res = Parallel(n_jobs=N_JOBS)(run_process(idb_rel_path, json_path, sig_size, output_csv_s) for idb_rel_path in jj.keys())
+        for r in res:
+            if r > 0:
+                success_cnt += r[0]
             else:
-                print("[!] Error in {} (returncode={})".format(
-                    idb_path, proc.returncode))
-                error_cnt += 1
+                error_cnt -= r[1]
 
         end_time = time.time()
         print("[D] Elapsed time: {}".format(end_time - start_time))
