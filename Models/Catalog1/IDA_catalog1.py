@@ -106,7 +106,6 @@ def run_catalog1(idb_path, fva_list, sig_size, output_csv):
     # Write the result to the CSV
     csv_out.write(output_str)
     csv_out.close()
-    return
 
 
 if __name__ == '__main__':
