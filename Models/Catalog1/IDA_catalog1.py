@@ -36,6 +36,7 @@ import idc
 import json
 import os
 import time
+import fcntl
 
 from catalog1.catalog_fast import sign
 from collections import namedtuple
@@ -65,8 +66,10 @@ def run_catalog1(idb_path, fva_list, sig_size, output_csv):
     if os.path.isfile(output_csv):
         # Found. Open the file in append mode
         csv_out = open(output_csv, "a")
+        fcntl.flock(csv_out, fcntl.LOCK_EX)
     else:
         csv_out = open(output_csv, "w")
+        fcntl.flock(csv_out, fcntl.LOCK_EX)
         # Not found. Write the column names to CSV
         csv_out.write(",".join(COLUMNS) + "\n")
 
