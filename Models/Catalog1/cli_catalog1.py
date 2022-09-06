@@ -57,77 +57,72 @@ LOG_PATH = "catalog1_log.txt"
               help="Path to the output CSV file")
 def main(json_path, output_csv):
     """Call IDA_catalog1 IDA script."""
-    try:
-        if not isfile(IDA_PATH):
-            print("[!] Error: IDA_PATH:{} not valid".format(IDA_PATH))
-            print("Use 'export IDA_PATH=/full/path/to/idat64'")
-            return
+    if not isfile(IDA_PATH):
+        print("[!] Error: IDA_PATH:{} not valid".format(IDA_PATH))
+        print("Use 'export IDA_PATH=/full/path/to/idat64'")
+        return
 
-        print("[D] JSON path: {}".format(json_path))
-        print("[D] Output CSV: {}".format(output_csv))
+    print("[D] JSON path: {}".format(json_path))
+    print("[D] Output CSV: {}".format(output_csv))
 
-        if not isfile(json_path):
-            print("[!] Error: {} does not exist".format(json_path))
-            return
+    if not isfile(json_path):
+        print("[!] Error: {} does not exist".format(json_path))
+        return
 
-        with open(json_path) as f_in:
-            jj = json.load(f_in)
+    with open(json_path) as f_in:
+        jj = json.load(f_in)
 
-            for sig_size in [16, 32, 64, 128]:
-                print("[D] Catalog1 with {} permutations".format(sig_size))
-                output_csv_s = output_csv.replace(".csv", "")
-                output_csv_s += "_{}.csv".format(sig_size)
+    for sig_size in [16, 32, 64, 128]:
+        print("[D] Catalog1 with {} permutations".format(sig_size))
+        output_csv_s = output_csv.replace(".csv", "")
+        output_csv_s += "_{}.csv".format(sig_size)
 
-                success_cnt, error_cnt = 0, 0
-                start_time = time.time()
-                for idb_rel_path in jj.keys():
-                    print("\n[D] Processing: {}".format(idb_rel_path))
+        success_cnt, error_cnt = 0, 0
+        start_time = time.time()
+        for idb_rel_path in jj.keys():
+            print("\n[D] Processing: {}".format(idb_rel_path))
 
-                    # Convert the relative path into a full path
-                    idb_path = join(REPO_PATH, idb_rel_path)
-                    print("[D] IDB full path: {}".format(idb_path))
+            # Convert the relative path into a full path
+            idb_path = join(REPO_PATH, idb_rel_path)
+            print("[D] IDB full path: {}".format(idb_path))
 
-                    if not isfile(idb_path):
-                        print("[!] Error: {} does not exist".format(idb_path))
-                        continue
+            if not isfile(idb_path):
+                print("[!] Error: {} does not exist".format(idb_path))
+                continue
 
-                    cmd = [IDA_PATH,
-                           '-A',
-                           '-L{}'.format(LOG_PATH),
-                           '-S{}'.format(IDA_PLUGIN),
-                           '-Ocatalog1:{}:{}:{}:{}'.format(
-                               json_path,
-                               idb_rel_path,
-                               sig_size,
-                               output_csv_s),
-                           idb_path]
+            cmd = [IDA_PATH,
+                   '-A',
+                   '-L{}'.format(LOG_PATH),
+                   '-S{}'.format(IDA_PLUGIN),
+                   '-Ocatalog1:{}:{}:{}:{}'.format(
+                       json_path,
+                       idb_rel_path,
+                       sig_size,
+                       output_csv_s),
+                   idb_path]
 
-                    print("[D] cmd: {}".format(cmd))
+            print("[D] cmd: {}".format(cmd))
 
-                    proc = subprocess.Popen(
-                        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    stdout, stderr = proc.communicate()
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
 
-                    if proc.returncode == 0:
-                        print("[D] {}: success".format(idb_path))
-                        success_cnt += 1
-                    else:
-                        print("[!] Error in {} (returncode={})".format(
-                            idb_path, proc.returncode))
-                        error_cnt += 1
+            if proc.returncode == 0:
+                print("[D] {}: success".format(idb_path))
+                success_cnt += 1
+            else:
+                print("[!] Error in {} (returncode={})".format(
+                    idb_path, proc.returncode))
+                error_cnt += 1
 
-                end_time = time.time()
-                print("[D] Elapsed time: {}".format(end_time - start_time))
-                with open(LOG_PATH, "a+") as f_out:
-                    f_out.write("elapsed_time: {}\n".format(
-                        end_time - start_time))
+        end_time = time.time()
+        print("[D] Elapsed time: {}".format(end_time - start_time))
+        with open(LOG_PATH, "a+") as f_out:
+            f_out.write("elapsed_time: {}\n".format(
+                end_time - start_time))
 
-                print("\n# IDBs correctly processed: {}".format(success_cnt))
-                print("# IDBs error: {}".format(error_cnt))
-
-    except Exception as e:
-        print("[!] Exception in cli_catalog1\n{}".format(e))
-
+        print("\n# IDBs correctly processed: {}".format(success_cnt))
+        print("# IDBs error: {}".format(error_cnt))
 
 if __name__ == '__main__':
     main()
