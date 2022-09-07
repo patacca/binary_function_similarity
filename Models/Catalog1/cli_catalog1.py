@@ -121,7 +121,7 @@ def main(json_path, output_csv):
         start_time = time.time()
 
         with Pool(N_JOBS) as pool:
-            res = poo.starmap(run_process, ((idb_rel_path, json_path, sig_size, output_csv_s) for idb_rel_path in jj.keys()))
+            res = pool.starmap(run_process, ((idb_rel_path, json_path, sig_size, output_csv_s) for idb_rel_path in jj.keys()))
         for r in res:
             if r > 0:
                 success_cnt += r
