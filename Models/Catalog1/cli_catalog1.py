@@ -43,16 +43,15 @@ from os.path import abspath
 from os.path import dirname
 from os.path import isfile
 from os.path import join
-from joblib import Parallel, delayed
+from multiprocessing import Pool
 
 IDA_PATH = getenv("IDA_PATH", "/home/user/idapro-7.3/idat64")
 IDA_PLUGIN = join(dirname(abspath(__file__)), 'IDA_catalog1.py')
 REPO_PATH = dirname(dirname(dirname(abspath(__file__))))
 LOG_PATH = "catalog1_log.txt"
-N_JOBS = -1  # Use all the resources available
+N_JOBS = 32  # Use all the resources available
 
 
-@delayed
 def run_process(idb_rel_path, json_path, sig_size, output_csv_s):
     """
     Run the IDA script and returns -1 if there was an error and 1 if it was a success
@@ -121,7 +120,8 @@ def main(json_path, output_csv):
         success_cnt, error_cnt = 0, 0
         start_time = time.time()
 
-        res = Parallel(n_jobs=N_JOBS)(run_process(idb_rel_path, json_path, sig_size, output_csv_s) for idb_rel_path in jj.keys())
+        with Pool(N_JOBS) as pool:
+            res = poo.starmap(run_process, ((idb_rel_path, json_path, sig_size, output_csv_s) for idb_rel_path in jj.keys()))
         for r in res:
             if r > 0:
                 success_cnt += r
